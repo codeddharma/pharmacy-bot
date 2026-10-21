@@ -1,0 +1,11 @@
+node_modules/
+.env
+# Runtime data: contains customer and health information
+data/orders.json
+data/reservations.json
+data/customers.json
+data/sessions.json
+data/waitlist.json
+data/audit.jsonl
+data/uploads/*
+!data/uploads/.gitkeep

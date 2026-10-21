@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "store_id": "DEMO-01",
+    "as_of": "2026-10-22",
+    "unit": "packs",
+    "near_expiry_days": 90,
+    "low_stock_note": "An item is low on stock when available <= reorder_level.",
+    "note": "Quantities are whole packs (strips, tubes, bottles, sachets) matching catalogue.pack. Batch numbers are fictional. exp is YYYY-MM, meaning the end of that month. available = sum of qty for batches expiring more than near_expiry_days from today, minus reserved. Sell the earliest-expiring batch first (FEFO).",
+    "test_scenarios": {
+      "OTRIVIN-OXY-10ML": "Out of stock: offer a notify-me.",
+      "VOLINI-GEL-30G": "Low stock: only 3 left.",
+      "ZANDU-BALM-10ML": "2 of 6 already reserved by another order.",
+      "SHELCAL500-15": "Mixed batches: 10 packs expire in Dec 2026 and must not be sold; 6 good packs left.",
+      "HEXIDINE-160ML": "Only near-expiry stock, so it counts as out of stock.",
+      "DULCOLAX5-10": "Discontinued: suggest DULCOFLEX5-15.",
+      "ADDWIZE10-10": "Schedule X: not stocked and never sold online."
+    }
+  },
+  "items": {
+    "DOLO650-15":         { "reserved": 0, "reorder_level": 60, "rack": "A1", "batches": [
+      { "batch": "DOL6A114", "mfg": "2025-09", "exp": "2028-08", "qty": 80 },
+      { "batch": "DOL6C287", "mfg": "2026-03", "exp": "2029-02", "qty": 120 } ] },
+    "CROCINADV500-20":    { "reserved": 0, "reorder_level": 25, "rack": "A1", "batches": [
+      { "batch": "CRA5K902", "mfg": "2025-11", "exp": "2028-10", "qty": 60 } ] },
+    "CALPOL500-15":       { "reserved": 0, "reorder_level": 20, "rack": "A1", "batches": [
+      { "batch": "CAL5H331", "mfg": "2025-08", "exp": "2028-07", "qty": 30 },
+      { "batch": "CAL6B045", "mfg": "2026-02", "exp": "2029-01", "qty": 45 } ] },
+    "DISPRIN325-10":      { "reserved": 0, "reorder_level": 15, "rack": "A2", "batches": [
+      { "batch": "DSP5L210", "mfg": "2025-12", "exp": "2027-11", "qty": 40 } ] },
+    "SARIDON-HB-10":      { "reserved": 0, "reorder_level": 10, "rack": "A2", "batches": [
+      { "batch": "SRD6A077", "mfg": "2026-01", "exp": "2029-12", "qty": 30 } ] },
+    "DIGENE-MINT-15":     { "reserved": 0, "reorder_level": 15, "rack": "B1", "batches": [
+      { "batch": "DGN6B118", "mfg": "2026-02", "exp": "2028-01", "qty": 35 } ] },
+    "ENO-LEMON-5G":       { "reserved": 0, "reorder_level": 50, "rack": "B1", "batches": [
+      { "batch": "ENO6D410", "mfg": "2026-04", "exp": "2029-03", "qty": 150 } ] },
+    "PUDINHARA-10":       { "reserved": 0, "reorder_level": 15, "rack": "B1", "batches": [
+      { "batch": "PHP6A023", "mfg": "2026-01", "exp": "2028-12", "qty": 40 } ] },
+    "GELUSIL-MPS-200ML":  { "reserved": 0, "reorder_level": 8, "rack": "B2", "batches": [
+      { "batch": "GLM5J640", "mfg": "2025-10", "exp": "2027-09", "qty": 18 } ] },
+    "ELECTRAL-SACHET":    { "reserved": 0, "reorder_level": 60, "rack": "B3", "batches": [
+      { "batch": "ELT6C215", "mfg": "2026-03", "exp": "2028-08", "qty": 200 } ] },
+    "SATISABGOL-100G":    { "reserved": 0, "reorder_level": 5, "rack": "B3", "batches": [
+      { "batch": "SIB6E088", "mfg": "2026-05", "exp": "2028-04", "qty": 15 } ] },
+    "DULCOFLEX5-15":      { "reserved": 0, "reorder_level": 8, "rack": "B3", "batches": [
+      { "batch": "DFX6B301", "mfg": "2026-02", "exp": "2029-01", "qty": 20 } ] },
+    "DULCOLAX5-10":       { "reserved": 0, "reorder_level": 0, "rack": null, "batches": [] },
+    "VOLINI-GEL-30G":     { "reserved": 0, "reorder_level": 8, "rack": "C1", "batches": [
+      { "batch": "VLG6A519", "mfg": "2026-01", "exp": "2028-12", "qty": 3 } ] },
+    "MOOV-50G":           { "reserved": 0, "reorder_level": 8, "rack": "C1", "batches": [
+      { "batch": "MOV6C044", "mfg": "2026-03", "exp": "2029-02", "qty": 22 } ] },
+    "ZANDU-BALM-10ML":    { "reserved": 2, "reorder_level": 5, "rack": "C1", "batches": [
+      { "batch": "ZDB6D162", "mfg": "2026-04", "exp": "2029-03", "qty": 6 } ] },
+    "VICKS-VAPORUB-50ML": { "reserved": 0, "reorder_level": 10, "rack": "C2", "batches": [
+      { "batch": "VVR6B730", "mfg": "2026-02", "exp": "2029-01", "qty": 25 } ] },
+    "STREPSILS-HL-8":     { "reserved": 0, "reorder_level": 10, "rack": "C2", "batches": [
+      { "batch": "STH5L081", "mfg": "2025-12", "exp": "2027-11", "qty": 30 } ] },
+    "OTRIVIN-OXY-10ML":   { "reserved": 0, "reorder_level": 10, "rack": "C2", "batches": [] },
+    "BETADINE-OINT-20G":  { "reserved": 0, "reorder_level": 8, "rack": "D1", "batches": [
+      { "batch": "BTD6A390", "mfg": "2026-01", "exp": "2028-12", "qty": 20 } ] },
+    "DETTOL-125ML":       { "reserved": 0, "reorder_level": 10, "rack": "D1", "batches": [
+      { "batch": "DTL6E512", "mfg": "2026-05", "exp": "2029-04", "qty": 28 } ] },
+    "HEXIDINE-160ML":     { "reserved": 0, "reorder_level": 5, "rack": "D2", "batches": [
+      { "batch": "HXD5A074", "mfg": "2025-01", "exp": "2026-12", "qty": 8 } ] },
+    "LIMCEE500-15":       { "reserved": 0, "reorder_level": 20, "rack": "E1", "batches": [
+      { "batch": "LMC6A228", "mfg": "2026-01", "exp": "2027-12", "qty": 50 } ] },
+    "BECOSULES-20":       { "reserved": 0, "reorder_level": 15, "rack": "E1", "batches": [
+      { "batch": "BCS5K619", "mfg": "2025-11", "exp": "2027-10", "qty": 40 } ] },
+    "SHELCAL500-15":      { "reserved": 0, "reorder_level": 8, "rack": "E2", "batches": [
+      { "batch": "SHC4L803", "mfg": "2024-12", "exp": "2026-12", "qty": 10 },
+      { "batch": "SHC6C117", "mfg": "2026-03", "exp": "2028-02", "qty": 6 } ] },
+
+    "CETZINE10-15":       { "reserved": 0, "reorder_level": 15, "rack": "RX-1", "batches": [
+      { "batch": "CTZ6B402", "mfg": "2026-02", "exp": "2029-01", "qty": 40 } ] },
+    "AVIL25-15":          { "reserved": 0, "reorder_level": 10, "rack": "RX-1", "batches": [
+      { "batch": "AVL6A155", "mfg": "2026-01", "exp": "2028-12", "qty": 30 } ] },
+    "COMBIFLAM-20":       { "reserved": 0, "reorder_level": 12, "rack": "RX-1", "batches": [
+      { "batch": "CBF6D260", "mfg": "2026-04", "exp": "2029-03", "qty": 35 } ] },
+    "BRUFEN400-20":       { "reserved": 0, "reorder_level": 10, "rack": "RX-1", "batches": [
+      { "batch": "BRF6C038", "mfg": "2026-03", "exp": "2029-02", "qty": 25 } ] },
+    "CANDID-CREAM-20G":   { "reserved": 0, "reorder_level": 5, "rack": "RX-2", "batches": [
+      { "batch": "CND6A611", "mfg": "2026-01", "exp": "2028-12", "qty": 15 } ] },
+    "AUGMENTIN625-10":    { "reserved": 0, "reorder_level": 10, "rack": "RX-2", "batches": [
+      { "batch": "AUG6B227", "mfg": "2026-02", "exp": "2028-01", "qty": 25 } ] },
+    "AZITHRAL500-5":      { "reserved": 0, "reorder_level": 10, "rack": "RX-2", "batches": [
+      { "batch": "AZT6C504", "mfg": "2026-03", "exp": "2028-02", "qty": 30 } ] },
+    "PAN40-15":           { "reserved": 0, "reorder_level": 15, "rack": "RX-3", "batches": [
+      { "batch": "PAN6A319", "mfg": "2026-01", "exp": "2028-12", "qty": 40 } ] },
+    "DOMSTAL10-10":       { "reserved": 0, "reorder_level": 10, "rack": "RX-3", "batches": [
+      { "batch": "DMS6B145", "mfg": "2026-02", "exp": "2029-01", "qty": 30 } ] },
+    "EMESET4-10":         { "reserved": 0, "reorder_level": 10, "rack": "RX-3", "batches": [
+      { "batch": "EMS6A207", "mfg": "2026-01", "exp": "2028-12", "qty": 25 } ] },
+    "GLYCOMET500-10":     { "reserved": 0, "reorder_level": 25, "rack": "RX-4", "batches": [
+      { "batch": "GLY6C092", "mfg": "2026-03", "exp": "2029-02", "qty": 60 } ] },
+    "AMLONG5-30":         { "reserved": 0, "reorder_level": 10, "rack": "RX-4", "batches": [
+      { "batch": "AML6B381", "mfg": "2026-02", "exp": "2029-01", "qty": 30 } ] },
+    "TELMA40-30":         { "reserved": 0, "reorder_level": 10, "rack": "RX-4", "batches": [
+      { "batch": "TLM6A266", "mfg": "2026-01", "exp": "2028-12", "qty": 25 } ] },
+    "ATORVA10-15":        { "reserved": 0, "reorder_level": 10, "rack": "RX-4", "batches": [
+      { "batch": "ATV6C410", "mfg": "2026-03", "exp": "2028-02", "qty": 30 } ] },
+    "THYRONORM50-120":    { "reserved": 0, "reorder_level": 5, "rack": "RX-4", "batches": [
+      { "batch": "THN6B058", "mfg": "2026-02", "exp": "2027-07", "qty": 15 } ] },
+    "MONTAIRLC-15":       { "reserved": 0, "reorder_level": 8, "rack": "RX-5", "batches": [
+      { "batch": "MLC6A133", "mfg": "2026-01", "exp": "2027-12", "qty": 20 } ] },
+    "ALLEGRA120-10":      { "reserved": 0, "reorder_level": 8, "rack": "RX-5", "batches": [
+      { "batch": "ALG5L477", "mfg": "2025-12", "exp": "2027-11", "qty": 18 } ] },
+    "ASCORILLS-100ML":    { "reserved": 0, "reorder_level": 6, "rack": "RX-5", "batches": [
+      { "batch": "ASC5K320", "mfg": "2025-11", "exp": "2027-10", "qty": 15 } ] },
+    "TAXIMO200-10":       { "reserved": 0, "reorder_level": 8, "rack": "RX-LOCKED", "batches": [
+      { "batch": "TXO6A091", "mfg": "2026-01", "exp": "2027-12", "qty": 20 } ] },
+    "LEVOFLOX500-10":     { "reserved": 0, "reorder_level": 6, "rack": "RX-LOCKED", "batches": [
+      { "batch": "LVF6B214", "mfg": "2026-02", "exp": "2029-01", "qty": 15 } ] },
+    "ALPRAX025-15":       { "reserved": 0, "reorder_level": 4, "rack": "RX-LOCKED", "batches": [
+      { "batch": "ALX5J018", "mfg": "2025-10", "exp": "2027-09", "qty": 10 } ] },
+    "ADDWIZE10-10":       { "reserved": 0, "reorder_level": 0, "rack": null, "batches": [] }
+  }
+}
