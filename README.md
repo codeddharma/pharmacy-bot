@@ -94,6 +94,35 @@ These work only from chats listed in `ADMIN_CHAT_IDS`:
 /reload                                      reload catalogue.json now
 ```
 
+## Deploy with PM2
+
+On the machine that will run the bot (Node 22 or newer):
+
+```bash
+npm install -g pm2
+git clone <repo URL> pharmacy-bot && cd pharmacy-bot
+npm ci
+cp .env.example .env        # then fill it in
+pm2 start ecosystem.config.cjs
+pm2 save                    # remember the process list
+pm2 startup                 # prints a command to run once so the bot starts after a reboot
+```
+
+Day to day:
+
+```bash
+pm2 logs pharmacy-bot       # live logs (also in logs/out.log and logs/error.log)
+pm2 restart pharmacy-bot    # after editing .env
+git pull && npm ci && pm2 restart pharmacy-bot   # deploy new code
+```
+
+Some things to know:
+
+- **Run only one copy per bot token.** If the bot is running under PM2, don't also run `npm start` on your laptop with the same token: Telegram answers `409 Conflict` and one copy stops getting messages.
+- **`data/` lives on that machine.** It holds every order and customer, so back it up. `git pull` won't overwrite it, because the runtime files aren't in git.
+- **A bad token won't loop forever.** If the bot crashes within 20 seconds of starting 10 times in a row (a bad token, say), PM2 stops retrying. Fix `.env`, then run `pm2 restart pharmacy-bot`.
+- **Logs grow over time.** Run `pm2 install pm2-logrotate` to stop the log files growing forever.
+
 ## Development
 
 ```bash

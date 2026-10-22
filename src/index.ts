@@ -51,8 +51,12 @@ async function main() {
     setInterval(() => engine.runJobs().catch((e) => console.error("[jobs]", e)), 60_000),
     setInterval(runCleanup, 6 * 60 * 60 * 1000),
   ];
+  // PM2 sends SIGINT on stop/restart. Stop polling and timers; in-flight updates finish
+  // and the process exits on its own once nothing is left running.
   const stop = () => {
+    console.log("[bot] shutting down");
     timers.forEach(clearInterval);
+    catalogue.close();
     void telegram.bot.stop();
   };
   process.once("SIGINT", stop);

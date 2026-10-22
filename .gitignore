@@ -9,3 +9,4 @@ data/waitlist.json
 data/audit.jsonl
 data/uploads/*
 !data/uploads/.gitkeep
+logs/

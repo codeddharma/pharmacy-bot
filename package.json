@@ -18,11 +18,11 @@
     "fuse.js": "^7.5.0",
     "grammy": "^1.46.0",
     "lowdb": "^7.0.1",
+    "tsx": "^4.23.15",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }

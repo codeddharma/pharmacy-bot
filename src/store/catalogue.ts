@@ -1,4 +1,4 @@
-import { readFileSync, watch } from "node:fs";
+import { readFileSync, watch, type FSWatcher } from "node:fs";
 import path from "node:path";
 import { CatalogueSchema, type Catalogue, type Product } from "../types.ts";
 
@@ -63,9 +63,11 @@ export class CatalogueStore {
     }
   }
 
+  private watcher?: FSWatcher;
+
   watch() {
     let timer: NodeJS.Timeout | undefined;
-    watch(this.file, () => {
+    this.watcher = watch(this.file, () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const result = this.reload();
@@ -73,5 +75,10 @@ export class CatalogueStore {
         else console.error(`[catalogue] reload failed, keeping previous version:\n${result.error}`);
       }, 300);
     });
+  }
+
+  /** Stops watching the file so the process can exit. */
+  close() {
+    this.watcher?.close();
   }
 }
