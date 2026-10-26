@@ -69,6 +69,12 @@ export interface EngineDeps {
   now?: () => Date;
 }
 
+/** What a staff action did; notifyError is set when the customer couldn't be messaged. */
+export interface StaffResult {
+  order: Order;
+  notifyError: string | null;
+}
+
 /** Thrown when a WhatsApp customer can't be messaged because the 24-hour window closed and no template is set. */
 export class WindowClosedError extends Error {}
 
@@ -1124,7 +1130,7 @@ export class Engine {
     if (userId === null) await this.sendTo(customer, [{ text: "You're back with our assistant. Send a medicine list or a prescription any time." }], { staffUserId: byUserId });
   }
 
-  async assignAgent(orderId: string, agentId: number, byUserId: number): Promise<Order> {
+  async assignAgent(orderId: string, agentId: number, byUserId: number): Promise<StaffResult> {
     const { db } = this.d;
     const order = await getOrder(db, orderId);
     if (!order) throw new Error("Order not found");
@@ -1134,13 +1140,13 @@ export class Engine {
     const updated = await updateOrder(db, orderId, { agentId }, { note: `Assigned to ${agent.name}`, userId: byUserId, at: this.now() });
     this.d.bus.emit({ type: "order.updated", orderId, status: updated.status, agentId });
     await audit(db, { action: "agent_assigned", userId: byUserId, entity: "order", entityId: orderId, data: { agentId } });
-    await this.sendToCustomerId(order.customerId, [
+    const notifyError = await this.sendToCustomerId(order.customerId, [
       { text: `🚚 ${agent.name} will deliver your order ${orderId}.${agent.phone ? `\n📞 ${formatPhone(agent.phone)}` : ""}` },
     ]);
-    return updated;
+    return { order: updated, notifyError };
   }
 
-  async setOrderStatus(orderId: string, to: OrderStatus, byUserId: number, note?: string): Promise<Order> {
+  async setOrderStatus(orderId: string, to: OrderStatus, byUserId: number, note?: string): Promise<StaffResult> {
     const { db } = this.d;
     const order = await getOrder(db, orderId);
     if (!order) throw new Error("Order not found");
@@ -1162,12 +1168,12 @@ export class Engine {
       await updateOrder(db, orderId, { paymentStatus: "paid" }, { note: "Cash collected", userId: byUserId, at: this.now() });
     }
     const text = messages[to];
-    if (text) await this.sendToCustomerId(order.customerId, [{ text }]);
-    return updated;
+    const notifyError = text ? await this.sendToCustomerId(order.customerId, [{ text }]) : null;
+    return { order: updated, notifyError };
   }
 
   /** Cancels an order: releases held stock or puts sold stock back, refunds UPI payments, tells the customer. */
-  async cancelOrder(orderId: string, byUserId: number | null, reason: string): Promise<Order> {
+  async cancelOrder(orderId: string, byUserId: number | null, reason: string): Promise<StaffResult> {
     const { db, bus } = this.d;
     const order = await getOrder(db, orderId);
     if (!order) throw new Error("Order not found");
@@ -1189,16 +1195,17 @@ export class Engine {
 
     const refunded = order.paymentStatus === "paid" ? await this.refund(orderId, byUserId, reason) : false;
     const customer = await getCustomer(db, order.customerId);
+    let notifyError: string | null = null;
     if (customer && byUserId !== null) {
       const session = sessionOf(customer);
       if (session.orderId === orderId) await setSession(db, customer.id, { state: "idle" }, this.now());
-      await this.sendTo(customer, [
+      notifyError = await this.sendToCustomerId(customer.id, [
         {
           text: `Your order ${orderId} was cancelled by the pharmacy.${reason ? ` Reason: ${reason}.` : ""}${refunded ? ` A refund of ${money(order.totalPaise)} has been started; it usually reaches your account in 5–7 working days.` : ""}`,
         },
       ]);
     }
-    return (await getOrder(db, orderId)) ?? updated;
+    return { order: (await getOrder(db, orderId)) ?? updated, notifyError };
   }
 
   /** Tells waiting customers a product is back. Called after stock is added from the dashboard. */
@@ -1213,7 +1220,7 @@ export class Engine {
     for (const w of waiting) {
       await this.sendToCustomerId(w.customerId, [
         { text: `Good news: ${product.brand} is back in stock.`, buttons: [[{ label: `🛒 Order ${shortLabel(product.brand, 24)}`, action: `add:${sku}` }]] },
-      ]).catch((e) => console.error("[waitlist]", e));
+      ]);
     }
     if (waiting.length) await db.delete(waitlist).where(eq(waitlist.sku, sku));
     return waiting.length;
@@ -1277,9 +1284,23 @@ export class Engine {
     await this.save(customer, { state: "idle" });
   }
 
-  private async sendToCustomerId(customerId: number, messages: OutboundMessage[]) {
+  /**
+   * Best-effort message after a staff action or payment event. The action has already
+   * happened, so a delivery failure is logged and reported back instead of thrown.
+   * Returns the error message, or null when the message went out.
+   */
+  private async sendToCustomerId(customerId: number, messages: OutboundMessage[]): Promise<string | null> {
     const customer = await getCustomer(this.d.db, customerId);
-    if (customer) await this.sendTo(customer, messages);
+    if (!customer) return "Customer not found";
+    try {
+      await this.sendTo(customer, messages);
+      return null;
+    } catch (err) {
+      const message = (err as Error).message;
+      console.error(`[notify] customer ${customerId}:`, message);
+      await audit(this.d.db, { action: "customer_notify_failed", customerId, data: { error: message, text: messages[0]?.text.slice(0, 200) } });
+      return message;
+    }
   }
 
   /**

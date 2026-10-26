@@ -55,7 +55,16 @@ export async function buildServer(ctx: AppContext, extra?: (app: FastifyInstance
   extra?.(app);
 
   if (ctx.dashboardDir && existsSync(path.join(ctx.dashboardDir, "index.html"))) {
-    await app.register(fastifyStatic, { root: ctx.dashboardDir, wildcard: false, maxAge: "1h" });
+    // Built assets have content hashes in their names, so they can be cached for good;
+    // index.html must always be fresh so a new deploy shows up on the next page load.
+    await app.register(fastifyStatic, {
+      root: ctx.dashboardDir,
+      // Look files up on each request, so a rebuilt dashboard is served without a restart.
+      wildcard: true,
+      setHeaders: (reply, file) => {
+        reply.header("cache-control", file.endsWith(".html") ? "no-cache" : "public, max-age=31536000, immutable");
+      },
+    });
     // Single-page app: any other non-API path serves index.html.
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith("/api/") || req.url.startsWith("/webhooks/") || req.method !== "GET") {

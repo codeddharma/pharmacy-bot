@@ -247,7 +247,10 @@ test("staff take over a chat, assign an agent, update status, cancel with refund
   assert.match(t.telegram.lastText(), /on its way with Ravi \(\+91 98123 45678\)/);
   await assert.rejects(t.engine.setOrderStatus(o.id, "reserved", agent));
 
-  await t.engine.cancelOrder(o.id, manager, "Customer asked to cancel");
+  const cancel = await t.engine.cancelOrder(o.id, manager, "Customer asked to cancel");
+  assert.equal(cancel.notifyError, null);
+  const result = await t.engine.cancelOrder(o.id, manager, "again").catch((e: Error) => e);
+  assert.ok(result instanceof Error); // already cancelled
   const cancelled = await lastOrder(t);
   assert.equal(cancelled.status, "cancelled");
   assert.equal(cancelled.paymentStatus, "refund_pending");

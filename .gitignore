@@ -1,14 +1,19 @@
 node_modules/
 .env
-# Runtime data: contains customer and health information
+.DS_Store
+logs/
+.scratch/
+.claude/
+
+# Local embedded database and uploaded prescriptions (customer and health data)
+data/pgdata/
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Old file-based storage from the first version
 data/orders.json
 data/reservations.json
 data/customers.json
 data/sessions.json
 data/waitlist.json
 data/audit.jsonl
-data/uploads/*
-!data/uploads/.gitkeep
-logs/
-.DS_Store
-.scratch/

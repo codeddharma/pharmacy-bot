@@ -95,8 +95,9 @@ export function catalogueRoutes(app: FastifyInstance, ctx: AppContext) {
         [r.sku, r.brand, r.generic, r.manufacturer, ...r.aliases].some((f) => f.toLowerCase().includes(needle)),
       );
     }
-    if (q.stock === "low") rows = rows.filter((r) => r.active && r.stockStatus !== "ok");
-    if (q.stock === "out") rows = rows.filter((r) => r.active && r.stockStatus === "out");
+    // Schedule X is never stocked for online sale, so it isn't a restocking concern.
+    if (q.stock === "low") rows = rows.filter((r) => r.active && r.schedule !== "X" && r.stockStatus !== "ok");
+    if (q.stock === "out") rows = rows.filter((r) => r.active && r.schedule !== "X" && r.stockStatus === "out");
     if (q.stock === "expiring") rows = rows.filter((r) => r.nearExpiryPacks > 0);
     return { products: rows };
   });

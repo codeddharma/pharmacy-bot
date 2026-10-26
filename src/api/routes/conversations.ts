@@ -9,6 +9,14 @@ import { audit } from "../../services/customers.ts";
 import type { AppContext } from "../context.ts";
 import { badRequest, currentUser, HttpError, idParam, notFound, parse, requireAny } from "../http.ts";
 
+/** Turns a failed send into a message staff can act on (the reply was not delivered). */
+function deliveryError(err: unknown): HttpError {
+  if (err instanceof HttpError) return err;
+  if (err instanceof WindowClosedError) return new HttpError(409, err.message);
+  console.error("[inbox] send failed:", err);
+  return new HttpError(502, `Couldn't deliver the message: ${(err as Error).message}`);
+}
+
 const MIME: Record<string, string> = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".pdf": "application/pdf" };
 
 export function conversationRoutes(app: FastifyInstance, ctx: AppContext) {
@@ -91,8 +99,7 @@ export function conversationRoutes(app: FastifyInstance, ctx: AppContext) {
     try {
       await ctx.engine.sendStaffMessage(id, text, user.id);
     } catch (err) {
-      if (err instanceof WindowClosedError) throw new HttpError(409, err.message);
-      throw err;
+      throw deliveryError(err);
     }
     return { ok: true };
   });
@@ -180,8 +187,7 @@ export function conversationRoutes(app: FastifyInstance, ctx: AppContext) {
     try {
       await ctx.engine.answerConsultation(id, answer, user.id);
     } catch (err) {
-      if (err instanceof WindowClosedError) throw new HttpError(409, err.message);
-      throw err;
+      throw deliveryError(err);
     }
     return { ok: true };
   });

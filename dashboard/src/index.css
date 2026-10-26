@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* DawaDesk theme. Teal = brand and primary actions; slate = structure; status colours have fixed meanings. */
+:root {
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --primary: #0f766e;
+  --primary-hover: #0d9488;
+  --primary-soft: #ccfbf1;
+  --primary-foreground: #ffffff;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-active: #134e4a;
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --warning: #d97706;
+  --warning-soft: #fef3c7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --info: #2563eb;
+  --info-soft: #dbeafe;
+  --violet: #7c3aed;
+  --violet-soft: #ede9fe;
+  --orange: #ea580c;
+  --orange-soft: #ffedd5;
+  /* Chart marks: validated for lightness, chroma and contrast on light and dark surfaces. */
+  --chart: #0d9488;
+}
+
+.dark {
+  --background: #0b1120;
+  --surface: #111827;
+  --surface-muted: #1e293b;
+  --foreground: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #1f2a3c;
+  --primary: #14b8a6;
+  --primary-hover: #2dd4bf;
+  --primary-soft: #134e4a;
+  --primary-foreground: #042f2e;
+  --sidebar: #020617;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-active: #134e4a;
+  --success: #4ade80;
+  --success-soft: #14532d;
+  --warning: #fbbf24;
+  --warning-soft: #451a03;
+  --danger: #f87171;
+  --danger-soft: #450a0a;
+  --info: #60a5fa;
+  --info-soft: #172554;
+  --violet: #a78bfa;
+  --violet-soft: #2e1065;
+  --orange: #fb923c;
+  --orange-soft: #431407;
+  --chart: #0d9488;
+}
+
+@theme inline {
+  --font-sans: "Inter", "Noto Sans Devanagari", "Noto Sans Gujarati", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Prices and quantities line up in columns. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}

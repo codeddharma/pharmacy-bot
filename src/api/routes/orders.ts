@@ -84,7 +84,8 @@ export function orderRoutes(app: FastifyInstance, ctx: AppContext) {
     const user = currentUser(req);
     const { id } = req.params as { id: string };
     const { agentId } = parse(z.object({ agentId: z.number().int().positive() }), req.body);
-    return { order: await ctx.engine.assignAgent(id, agentId, user.id) };
+    const r = await ctx.engine.assignAgent(id, agentId, user.id);
+    return { order: r.order, warning: r.notifyError ? `Done, but the customer couldn't be messaged: ${r.notifyError}` : null };
   });
 
   app.post("/api/orders/:id/status", { preHandler: requireAny("orders.manage", "deliveries.own") }, async (req) => {
@@ -97,7 +98,8 @@ export function orderRoutes(app: FastifyInstance, ctx: AppContext) {
       if (!["out_for_delivery", "delivered"].includes(body.status)) throw forbidden("Agents can only mark orders picked up or delivered");
     }
     if (body.status === "cancelled") throw badRequest("Use cancel to cancel an order");
-    return { order: await ctx.engine.setOrderStatus(id, body.status, user.id, body.note) };
+    const r = await ctx.engine.setOrderStatus(id, body.status, user.id, body.note);
+    return { order: r.order, warning: r.notifyError ? `Done, but the customer couldn't be messaged: ${r.notifyError}` : null };
   });
 
   app.post("/api/orders/:id/cancel", { preHandler: requireAny("orders.manage") }, async (req) => {
@@ -107,6 +109,7 @@ export function orderRoutes(app: FastifyInstance, ctx: AppContext) {
     const [o] = await ctx.db.select().from(orders).where(eq(orders.id, id));
     if (!o) throw notFound("Order not found");
     if (o.paymentStatus === "paid" && !can(req, "orders.refund")) throw forbidden("This order was paid by UPI; cancelling it needs refund permission");
-    return { order: await ctx.engine.cancelOrder(id, user.id, reason) };
+    const r = await ctx.engine.cancelOrder(id, user.id, reason);
+    return { order: r.order, warning: r.notifyError ? `Cancelled, but the customer couldn't be messaged: ${r.notifyError}` : null };
   });
 }
