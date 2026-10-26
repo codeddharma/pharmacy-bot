@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { normalizeIndianMobile } from "../src/core/engine.ts";
+import { normalizeIndianMobile } from "../src/core/format.ts";
 import { Matcher } from "../src/core/matcher.ts";
 import { parseTypedList } from "../src/core/parse.ts";
 

@@ -14,6 +14,10 @@ const FILLER = new Set([
   "i", "need", "want", "please", "pls", "plz", "send", "me", "give", "buy", "order", "some", "hi", "hello",
   "hey", "can", "you", "get", "of", "the", "a", "an", "medicine", "medicines", "dawai", "dawa", "mujhe",
   "chahiye", "bhejo", "dena", "dedo", "do", "required", "also", "kindly", "sir", "madam", "bhai",
+  // Question words, so "what is the price of dolo 650?" leaves just the medicine.
+  "what", "whats", "is", "are", "price", "prices", "rate", "cost", "mrp", "how", "much", "kitna", "kitne",
+  "kitni", "ka", "ki", "ke", "hai", "tell", "than", "cheaper", "cheap", "sasta", "available", "have", "stock",
+  "urgent", "urgently", "asap", "jaldi", "now", "today",
 ]);
 
 export function parseTypedList(text: string): TypedItem[] {
@@ -27,7 +31,7 @@ export function parseTypedList(text: string): TypedItem[] {
     let s = raw
       .toLowerCase()
       .split(/\s+/)
-      .filter((t) => t && !FILLER.has(t))
+      .filter((t) => t && !FILLER.has(t.replace(/[?!.,]+$/, "")))
       .join(" ");
     let quantity: number | null = null;
 

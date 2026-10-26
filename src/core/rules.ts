@@ -1,18 +1,26 @@
-import type { CatalogueStore } from "../store/catalogue.ts";
-import type { Product } from "../types.ts";
+import type { CatalogueCache } from "../services/catalogue.ts";
+import type { Product, Schedule } from "../types.ts";
+
+export type SaleRule = "auto" | "pharmacist_review" | "pharmacist_review_with_register" | "never_online";
+
+/** What the bot may do with each drug schedule. Regulatory, so not editable from the dashboard. */
+export const SCHEDULE_RULES: Record<Schedule, SaleRule> = {
+  OTC: "auto",
+  G: "pharmacist_review",
+  H: "pharmacist_review",
+  H1: "pharmacist_review_with_register",
+  X: "never_online",
+};
+
+export type RefusalCode = "not_stocked" | "discontinued" | "prescription" | "schedule_x";
 
 export type RuleDecision =
   | { kind: "sell"; product: Product; qty: number; notes: string[] }
   | { kind: "refuse"; name: string; product?: Product; reason: string; code: RefusalCode };
 
-export type RefusalCode = "not_stocked" | "discontinued" | "prescription" | "schedule_x";
-
-/**
- * Decides whether the bot may sell one requested item. Stock is checked separately.
- * Only products whose schedule maps to "auto" in catalogue.meta.schedule_rules are sold.
- */
+/** Decides whether the bot may sell one requested item. Stock is checked separately. */
 export function decide(
-  catalogue: CatalogueStore,
+  catalogue: CatalogueCache,
   sku: string | null,
   asWritten: string,
   qty: number,
@@ -25,7 +33,7 @@ export function decide(
 
   const notes: string[] = [];
   if (!product.active) {
-    const replacement = product.replaced_by ? catalogue.get(product.replaced_by) : undefined;
+    const replacement = product.replacedBy ? catalogue.get(product.replacedBy) : undefined;
     if (!replacement?.active) {
       return { kind: "refuse", name: product.brand, product, reason: "This product is discontinued.", code: "discontinued" };
     }
@@ -33,7 +41,7 @@ export function decide(
     product = replacement;
   }
 
-  const rule = catalogue.scheduleRules[product.schedule];
+  const rule = SCHEDULE_RULES[product.schedule];
   if (rule === "never_online") {
     return {
       kind: "refuse",
@@ -53,9 +61,9 @@ export function decide(
     };
   }
 
-  if (qty > product.max_packs_per_order) {
-    notes.push(`Limited to ${product.max_packs_per_order} per order.`);
-    qty = product.max_packs_per_order;
+  if (qty > product.maxPacksPerOrder) {
+    notes.push(`Limited to ${product.maxPacksPerOrder} per order.`);
+    qty = product.maxPacksPerOrder;
   }
   return { kind: "sell", product, qty, notes };
 }

@@ -10,3 +10,5 @@ data/audit.jsonl
 data/uploads/*
 !data/uploads/.gitkeep
 logs/
+.DS_Store
+.scratch/

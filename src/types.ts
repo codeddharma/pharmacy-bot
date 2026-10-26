@@ -1,19 +1,22 @@
 import { z } from "zod";
+import type { products } from "./db/schema.ts";
 
-// ---- Catalogue (data/catalogue.json, read-only for the bot) ----
+export type Channel = "telegram" | "whatsapp";
+export type Schedule = "OTC" | "G" | "H" | "H1" | "X";
 
-export const ScheduleSchema = z.enum(["OTC", "G", "H", "H1", "X"]);
-export type Schedule = z.infer<typeof ScheduleSchema>;
+/** A catalogue product as the bot sees it: the database row plus the MRP in rupees. */
+export type Product = typeof products.$inferSelect & { mrp: number };
 
-export const SaleRuleSchema = z.enum([
-  "auto",
-  "pharmacist_review",
-  "pharmacist_review_with_register",
-  "never_online",
-]);
-export type SaleRule = z.infer<typeof SaleRuleSchema>;
+export function toProduct(row: typeof products.$inferSelect): Product {
+  return { ...row, mrp: row.mrpPaise / 100 };
+}
 
-export const ProductSchema = z.object({
+export const rupeesToPaise = (r: number) => Math.round(r * 100);
+export const paiseToRupees = (p: number) => p / 100;
+
+// ---- Seed files (data/catalogue.json, data/inventory.json) ----
+
+export const SeedProductSchema = z.object({
   sku: z.string(),
   brand: z.string(),
   generic: z.string(),
@@ -23,7 +26,7 @@ export const ProductSchema = z.object({
   manufacturer: z.string(),
   category: z.string(),
   system: z.string(),
-  schedule: ScheduleSchema,
+  schedule: z.enum(["OTC", "G", "H", "H1", "X"]),
   rx_required: z.boolean(),
   max_packs_per_order: z.number().int().min(0),
   mrp: z.number().nonnegative(),
@@ -35,94 +38,28 @@ export const ProductSchema = z.object({
   source: z.string().nullable(),
   active: z.boolean(),
 });
-export type Product = z.infer<typeof ProductSchema>;
 
-export const CatalogueSchema = z.object({
-  meta: z.looseObject({
-    currency: z.literal("INR"),
-    schedule_rules: z.record(ScheduleSchema, SaleRuleSchema),
-  }),
-  products: z.array(ProductSchema),
+export const SeedInventorySchema = z.object({
+  meta: z.looseObject({}),
+  items: z.record(
+    z.string(),
+    z.object({
+      reserved: z.number().int().min(0),
+      reorder_level: z.number().int().min(0),
+      rack: z.string().nullable(),
+      batches: z.array(
+        z.object({
+          batch: z.string(),
+          mfg: z.string().regex(/^\d{4}-\d{2}$/),
+          exp: z.string().regex(/^\d{4}-\d{2}$/),
+          qty: z.number().int().min(0),
+        }),
+      ),
+    }),
+  ),
 });
-export type Catalogue = z.infer<typeof CatalogueSchema>;
 
-// ---- Inventory (data/inventory.json, written by the bot) ----
-
-export const BatchSchema = z.object({
-  batch: z.string(),
-  mfg: z.string().regex(/^\d{4}-\d{2}$/),
-  exp: z.string().regex(/^\d{4}-\d{2}$/),
-  qty: z.number().int().min(0),
-});
-export type Batch = z.infer<typeof BatchSchema>;
-
-export const InventoryItemSchema = z.object({
-  reserved: z.number().int().min(0),
-  reorder_level: z.number().int().min(0),
-  rack: z.string().nullable(),
-  batches: z.array(BatchSchema),
-});
-export type InventoryItem = z.infer<typeof InventoryItemSchema>;
-
-export const InventorySchema = z.object({
-  meta: z.looseObject({ near_expiry_days: z.number().int().min(0) }),
-  items: z.record(z.string(), InventoryItemSchema),
-});
-export type Inventory = z.infer<typeof InventorySchema>;
-
-// ---- Runtime records ----
-
-export interface Reservation {
-  id: string;
-  orderId: string;
-  sku: string;
-  qty: number;
-  expiresAt: string; // ISO
-}
-
-export interface OrderLine {
-  sku: string;
-  brand: string;
-  packLabel: string;
-  qty: number;
-  mrp: number;
-  lineTotal: number;
-  note?: string;
-  batches?: { batch: string; exp: string; qty: number }[]; // filled when stock is committed
-}
-
-export type OrderStatus =
-  | "reserved" // cart shown, stock held
-  | "awaiting_payment"
-  | "paid"
-  | "cod_confirmed"
-  | "cancelled"
-  | "expired";
-
-export interface Order {
-  id: string;
-  userId: string;
-  channel: string;
-  status: OrderStatus;
-  lines: OrderLine[];
-  excluded: { name: string; reason: string }[];
-  subtotal: number;
-  deliveryFee: number;
-  total: number;
-  delivery?: { name: string; phone: string; address: string; pincode: string };
-  payment?: { method: "upi_mock" | "cod"; reference: string; at: string };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Customer {
-  name?: string;
-  phone?: string;
-  address?: string;
-  pincode?: string;
-  consentAt?: string;
-  language?: string;
-}
+// ---- Bot conversation state (stored on the customer row) ----
 
 /** One medicine the customer asked for, after matching against the catalogue. */
 export interface DraftItem {
@@ -143,32 +80,42 @@ export type SessionState =
   | "collect_phone"
   | "collect_address"
   | "collect_pincode"
+  | "collect_location"
   | "confirm_address"
-  | "awaiting_payment";
+  | "awaiting_payment"
+  | "awaiting_question";
 
 export interface Session {
   state: SessionState;
-  updatedAt: string;
   draft?: DraftItem[];
   orderId?: string;
-}
-
-export interface WaitlistEntry {
-  userId: string;
-  sku: string;
-  createdAt: string;
+  /** Kind of question being collected in "awaiting_question". */
+  questionKind?: "question" | "complaint";
+  /** A question the bot offered to pass to the pharmacist. */
+  pendingQuestion?: string;
+  /** The prescription file behind the current list, if it came from an upload. */
+  mediaPath?: string;
+  /** Prescription-only items refused from that upload (offered for pharmacist review). */
+  rxItems?: string[];
+  /** The customer chose not to share a location for this checkout. */
+  locationSkipped?: boolean;
 }
 
 // ---- Channel-agnostic messages ----
 
 export interface InboundMessage {
-  userId: string; // e.g. "tg:123456"
-  channel: string; // "telegram"
+  channel: Channel;
+  /** Telegram chat id or WhatsApp phone number. */
+  channelUserId: string;
+  /** Unique per channel; used to drop duplicate deliveries. */
   messageId: string;
   text?: string;
   media?: { kind: "image" | "pdf"; mimeType: string; data: Buffer };
   action?: string; // button press
   contactPhone?: string; // shared phone number
+  location?: { lat: number; lng: number };
+  /** Name from the channel profile, if known. */
+  profileName?: string;
 }
 
 export interface Button {
@@ -179,6 +126,7 @@ export interface Button {
 export interface OutboundMessage {
   text: string;
   buttons?: Button[][]; // rows of inline buttons
-  requestContact?: boolean; // show a "share phone number" keyboard
+  requestContact?: boolean; // show a "share phone number" button
+  requestLocation?: boolean; // show a "share location" button
   removeKeyboard?: boolean;
 }
