@@ -148,8 +148,8 @@ export function createTelegram(token: string) {
     });
   }
 
-  /** Registers POST /webhooks/telegram and points Telegram at it. */
-  async function useWebhook(app: FastifyInstance, publicUrl: string, secret: string) {
+  /** Adds POST /webhooks/telegram. Call before the server starts listening. */
+  async function registerWebhookRoute(app: FastifyInstance, secret: string) {
     await bot.init();
     app.post("/webhooks/telegram", async (req, reply) => {
       if (req.headers["x-telegram-bot-api-secret-token"] !== secret) return reply.status(401).send();
@@ -157,14 +157,26 @@ export function createTelegram(token: string) {
       void bot.handleUpdate(req.body as Parameters<typeof bot.handleUpdate>[0]).catch((e) => console.error("[telegram] update:", e));
       return reply.send({ ok: true });
     });
-    await bot.api.setMyCommands(commands);
-    await bot.api.setWebhook(`${publicUrl}/webhooks/telegram`, {
-      secret_token: secret,
-      allowed_updates: ["message", "callback_query"],
-      drop_pending_updates: false,
-    });
+  }
+
+  /**
+   * Points Telegram at our webhook. Throws a short error without the request payload,
+   * because Telegram's error object includes the secret token.
+   */
+  async function setWebhook(publicUrl: string, secret: string) {
+    try {
+      await bot.api.setMyCommands(commands);
+      await bot.api.setWebhook(`${publicUrl}/webhooks/telegram`, {
+        secret_token: secret,
+        allowed_updates: ["message", "callback_query"],
+        drop_pending_updates: false,
+      });
+    } catch (err) {
+      const e = err as { description?: string; message?: string };
+      throw new Error(e.description ?? e.message ?? "unknown error");
+    }
     console.log(`[telegram] @${bot.botInfo.username} (webhook ${publicUrl}/webhooks/telegram)`);
   }
 
-  return { bot, sender, attach, startPolling, useWebhook };
+  return { bot, sender, attach, startPolling, registerWebhookRoute, setWebhook };
 }

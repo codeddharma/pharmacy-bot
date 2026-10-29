@@ -178,6 +178,20 @@ test("orders: managers assign agents; agents update only their own deliveries", 
   assert.deepEqual(Object.keys(detail.body.customer).sort(), ["name", "phone"]);
   assert.deepEqual(detail.body.events.map((e: { status: string }) => e.status), ["reserved", "awaiting_payment", "confirmed", "confirmed", "out_for_delivery", "delivered", "delivered"]);
 
+  // Counts per customer, agent and role must belong to the right rows.
+  const customersList = await a.call(manager, "GET", "/api/customers");
+  assert.equal(customersList.status, 200, JSON.stringify(customersList.body));
+  const asha = customersList.body.customers.find((c: { name: string }) => c.name === "Asha");
+  assert.equal(asha.orderCount, 1);
+  assert.equal(asha.spentPaise, 5000);
+  const agentsList = await a.call(manager, "GET", "/api/agents");
+  assert.equal(agentsList.body.agents.find((x: { name: string }) => x.name === "Ravi").deliveredToday, 1);
+  const admin = await a.login("admin@x.in");
+  const rolesList = await a.call(admin, "GET", "/api/roles");
+  assert.equal(rolesList.body.roles.find((r: { key: string }) => r.key === "delivery_agent").userCount, 1);
+  const inbox = await a.call(manager, "GET", "/api/inbox");
+  assert.match(inbox.body.conversations[0].lastText, /has been delivered/);
+
   const stats = await a.call(manager, "GET", "/api/stats?days=7");
   assert.equal(stats.status, 200);
   assert.equal(stats.body.kpis.ordersToday, 1);

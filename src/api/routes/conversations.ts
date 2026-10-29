@@ -38,8 +38,9 @@ export function conversationRoutes(app: FastifyInstance, ctx: AppContext) {
       .select({
         customer: customers,
         handoffName: users.name,
-        lastText: sql<string>`(select ${messages.text} from ${messages} where ${messages.customerId} = ${customers.id} order by ${messages.createdAt} desc, ${messages.id} desc limit 1)`,
-        lastAt: sql<Date>`(select max(${messages.createdAt}) from ${messages} where ${messages.customerId} = ${customers.id})`,
+        // Table names spelled out: a bare "id" inside the sub-query would mean messages.id.
+        lastText: sql<string>`(select m.text from messages m where m.customer_id = customers.id order by m.created_at desc, m.id desc limit 1)`,
+        lastAt: sql<Date>`(select max(m.created_at) from messages m where m.customer_id = customers.id)`,
       })
       .from(customers)
       .leftJoin(users, eq(customers.handoffUserId, users.id))
@@ -134,8 +135,8 @@ export function conversationRoutes(app: FastifyInstance, ctx: AppContext) {
 
   app.get("/api/consultations", { preHandler: requireAny("consultations.view") }, async (req) => {
     const q = parse(z.object({ status: z.enum(["open", "answered", "closed", "all"]).default("open"), kind: z.string().optional() }), req.query);
-    const assignee = sql<string | null>`(select ${users.name} from ${users} where ${users.id} = ${consultations.assignedUserId})`;
-    const answeredByName = sql<string | null>`(select ${users.name} from ${users} where ${users.id} = ${consultations.answeredBy})`;
+    const assignee = sql<string | null>`(select u.name from users u where u.id = consultations.assigned_user_id)`;
+    const answeredByName = sql<string | null>`(select u.name from users u where u.id = consultations.answered_by)`;
     const rows = await ctx.db
       .select({ c: consultations, customerName: customers.name, customerPhone: customers.phone, channel: customers.channel, assignee, answeredByName })
       .from(consultations)

@@ -105,7 +105,7 @@ async function main() {
     if (config.telegramMode === "webhook") {
       if (!config.telegramWebhookSecret) throw new Error("TELEGRAM_MODE=webhook needs TELEGRAM_WEBHOOK_SECRET");
       if (!config.publicUrl.startsWith("https://")) throw new Error("TELEGRAM_MODE=webhook needs an https PUBLIC_URL");
-      await telegram.useWebhook(app, config.publicUrl, config.telegramWebhookSecret);
+      await telegram.registerWebhookRoute(app, config.telegramWebhookSecret);
     }
   }
   if (whatsapp) console.log(`[whatsapp] webhook ${config.publicUrl}/webhooks/whatsapp`);
@@ -113,6 +113,26 @@ async function main() {
   await app.listen({ port: config.port, host: config.host });
   console.log(`[api] dashboard and API on http://${config.host}:${config.port} (public: ${config.publicUrl})`);
   if (telegram && config.telegramMode === "polling") await telegram.startPolling();
+
+  // If Telegram can't reach the domain yet (DNS, SSL), keep the dashboard running and retry.
+  let webhookRetry: NodeJS.Timeout | undefined;
+  if (telegram && config.telegramMode === "webhook") {
+    const trySetWebhook = async () => {
+      try {
+        await telegram.setWebhook(config.publicUrl, config.telegramWebhookSecret);
+        clearInterval(webhookRetry);
+        webhookRetry = undefined;
+        return true;
+      } catch (err) {
+        console.error(
+          `[telegram] Couldn't register the webhook at ${config.publicUrl}/webhooks/telegram: ${(err as Error).message}. ` +
+            "Check the domain's DNS, SSL and Nginx. Retrying every 5 minutes; the dashboard keeps running.",
+        );
+        return false;
+      }
+    };
+    if (!(await trySetWebhook())) webhookRetry = setInterval(() => void trySetWebhook(), 5 * 60_000);
+  }
 
   const runCleanup = async () => {
     const s = await settings.get();
@@ -132,6 +152,7 @@ async function main() {
     stopping = true;
     console.log("[app] shutting down");
     timers.forEach(clearInterval);
+    clearInterval(webhookRetry);
     if (telegram && config.telegramMode === "polling") await telegram.bot.stop();
     await app.close();
     await close();

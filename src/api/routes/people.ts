@@ -40,8 +40,10 @@ export function peopleRoutes(app: FastifyInstance, ctx: AppContext) {
     const rows = await ctx.db
       .select({
         customer: customers,
-        orderCount: sql<number>`(select count(*)::int from ${orders} where ${orders.customerId} = ${customers.id} and ${orders.status} in ('confirmed','preparing','out_for_delivery','delivered'))`,
-        spentPaise: sql<number>`(select coalesce(sum(${orders.totalPaise}),0)::int from ${orders} where ${orders.customerId} = ${customers.id} and ${orders.status} in ('confirmed','preparing','out_for_delivery','delivered'))`,
+        // Sub-queries spell out table names: Drizzle prints bare column names inside sql``,
+        // and a bare "id" would resolve to the inner table's id.
+        orderCount: sql<number>`(select count(*)::int from orders o where o.customer_id = customers.id and o.status in ('confirmed','preparing','out_for_delivery','delivered'))`,
+        spentPaise: sql<number>`(select coalesce(sum(o.total_paise),0)::int from orders o where o.customer_id = customers.id and o.status in ('confirmed','preparing','out_for_delivery','delivered'))`,
       })
       .from(customers)
       .where(cond)
@@ -91,11 +93,12 @@ export function peopleRoutes(app: FastifyInstance, ctx: AppContext) {
   });
 
   app.get("/api/agents", { preHandler: requireAny("orders.view", "orders.manage") }, async () => {
+    const dayAgo = new Date((ctx.now?.() ?? new Date()).getTime() - 86_400_000);
     const rows = await ctx.db
       .select({
         u: users,
-        active: sql<number>`(select count(*)::int from ${orders} where ${orders.agentId} = ${users.id} and ${orders.status} in ('confirmed','preparing','out_for_delivery'))`,
-        deliveredToday: sql<number>`(select count(*)::int from ${orders} where ${orders.agentId} = ${users.id} and ${orders.status} = 'delivered' and ${orders.updatedAt} > now() - interval '1 day')`,
+        active: sql<number>`(select count(*)::int from orders o where o.agent_id = users.id and o.status in ('confirmed','preparing','out_for_delivery'))`,
+        deliveredToday: sql<number>`(select count(*)::int from orders o where o.agent_id = users.id and o.status = 'delivered' and o.updated_at > ${dayAgo})`,
       })
       .from(users)
       .innerJoin(roles, eq(users.roleId, roles.id))
@@ -168,7 +171,7 @@ export function peopleRoutes(app: FastifyInstance, ctx: AppContext) {
 
   app.get("/api/roles", { preHandler: requireAny("roles.manage", "users.manage") }, async () => {
     const rows = await ctx.db
-      .select({ r: roles, users: sql<number>`(select count(*)::int from ${users} where ${users.roleId} = ${roles.id})` })
+      .select({ r: roles, users: sql<number>`(select count(*)::int from users u where u.role_id = roles.id)` })
       .from(roles)
       .orderBy(asc(roles.id));
     return { roles: rows.map((x) => ({ ...x.r, userCount: x.users })) };
